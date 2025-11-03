@@ -1,20 +1,29 @@
 # Stage 1: Build with Maven and Java 21
 FROM maven:3.9.6-eclipse-temurin-21 AS build
+
 WORKDIR /app
+
+# Install git
 RUN apt-get update && apt-get install -y git
 
-# Clone backend repo
+# Clone backend repo (ensure repo public)
 RUN git clone https://github.com/Abhigna-Nannapaneni/kubernetes-be1.git
 
-# Set working directory to where pom.xml is
+# Set working directory to project
 WORKDIR /app/kubernetes-be1
 
-# Build WAR file
+# Build project (skip tests)
 RUN mvn clean package -DskipTests
 
-# Stage 2: Runtime with Tomcat
+# Stage 2: Runtime with Tomcat (Tomcat default port 8080)
 FROM tomcat:9.0-jdk17-temurin
+
+# Remove default webapps
 RUN rm -rf /usr/local/tomcat/webapps/*
+
+# Copy built WAR from Maven stage
 COPY --from=build /app/kubernetes-be1/target/*.war /usr/local/tomcat/webapps/back1.war
+
 EXPOSE 8080
+
 CMD ["catalina.sh", "run"]
